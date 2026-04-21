@@ -128,7 +128,6 @@ struct VideoDetailView: View {
                 columns: [
                     GridItem(.flexible()),
                     GridItem(.flexible()),
-                    GridItem(.flexible()),
                 ],
                 spacing: 12
             ) {
@@ -173,8 +172,11 @@ struct VideoDetailView: View {
             }
 
             Text(detail.title)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 14) {
                 Label(detail.ownerName, systemImage: "person.fill")
@@ -184,6 +186,7 @@ struct VideoDetailView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             if let publishedText = BiliFormatters.publishedText(detail.publishedAt) {
                 Text("Published on \(publishedText)")
@@ -191,6 +194,7 @@ struct VideoDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func descriptionSection(_ detail: VideoDetail) -> some View {
@@ -202,15 +206,20 @@ struct VideoDetailView: View {
                 .font(.body)
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var openInSafariButton: some View {
         Button {
             showingSafari = true
         } label: {
-            Label("Open the playback page in Safari", systemImage: "safari.fill")
+            Label("Open in Safari", systemImage: "safari.fill")
                 .frame(maxWidth: .infinity)
+                .lineLimit(1)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
@@ -250,6 +259,7 @@ struct VideoDetailView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func heroCover(detail: VideoDetail, topInset: CGFloat) -> some View {

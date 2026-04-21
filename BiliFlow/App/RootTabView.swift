@@ -1,11 +1,20 @@
 import SwiftUI
 
+enum RootTabItem: Hashable {
+    case home
+    case search
+    case profile
+}
+
 struct RootTabView: View {
+    @State private var selection: RootTabItem = .home
+
     var body: some View {
-        TabView {
+        TabView(selection: $selection) {
             NavigationStack {
-                HomeView()
+                HomeView(selection: $selection)
             }
+            .tag(RootTabItem.home)
             .tabItem {
                 Label("Home", systemImage: "house.fill")
             }
@@ -13,6 +22,7 @@ struct RootTabView: View {
             NavigationStack {
                 SearchView()
             }
+            .tag(RootTabItem.search)
             .tabItem {
                 Label("Search", systemImage: "magnifyingglass")
             }
@@ -20,6 +30,7 @@ struct RootTabView: View {
             NavigationStack {
                 ProfileView()
             }
+            .tag(RootTabItem.profile)
             .tabItem {
                 Label("Profile", systemImage: "person.crop.circle")
             }
