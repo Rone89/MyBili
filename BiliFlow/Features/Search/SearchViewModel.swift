@@ -93,7 +93,7 @@ final class SearchViewModel {
     func loadMoreIfNeeded(current video: VideoSummary) async {
         guard let submittedQuery,
               isShowingResults,
-              current.id == resultsState.value?.last?.id,
+              video.id == resultsState.value?.last?.id,
               currentPage < totalPages,
               !isLoadingMore else {
             return
@@ -121,4 +121,3 @@ final class SearchViewModel {
         return videos.filter { seen.insert($0.id).inserted }
     }
 }
-

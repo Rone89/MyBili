@@ -58,7 +58,7 @@ final class HomeViewModel {
     }
 
     func loadMoreIfNeeded(current video: VideoSummary) async {
-        guard !isLoadingMore, current.id == currentVideos.last?.id else {
+        guard !isLoadingMore, video.id == currentVideos.last?.id else {
             return
         }
 

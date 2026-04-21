@@ -52,22 +52,22 @@ actor WBISigner {
         let url = URL(string: "https://api.bilibili.com/x/web-interface/nav")!
         let response: NavEnvelope = try await client.get(url)
         guard response.code == 0,
-              let imgURL = response.data?.wbiImg?.imgURL,
-              let subURL = response.data?.wbiImg?.subURL else {
+              let imgURL = response.data?.wbiImg?.imgUrl,
+              let subURL = response.data?.wbiImg?.subUrl else {
             throw BiliAPIError.server(message: response.message)
         }
 
         let imgKey = Self.fileNameWithoutExtension(imgURL)
         let subKey = Self.fileNameWithoutExtension(subURL)
         let original = imgKey + subKey
-        let mixed = mixinKeyTable.compactMap { index in
+        let mixedCharacters: [Character] = mixinKeyTable.compactMap { index in
             guard index < original.count else {
                 return nil
             }
             return original[original.index(original.startIndex, offsetBy: index)]
         }
 
-        let mixinKey = String(mixed)
+        let mixinKey = String(mixedCharacters)
         cachedDay = today
         cachedMixinKey = mixinKey
         return mixinKey
@@ -98,7 +98,6 @@ private struct NavData: Decodable {
 }
 
 private struct NavWBIImage: Decodable {
-    let imgURL: String?
-    let subURL: String?
+    let imgUrl: String?
+    let subUrl: String?
 }
-
