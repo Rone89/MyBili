@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct VideoDetailView: View {
     @State private var viewModel: VideoDetailViewModel
@@ -56,13 +57,15 @@ struct VideoDetailView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .toolbar(.hidden, for: .tabBar)
         .task {
             await viewModel.loadIfNeeded()
         }
         .refreshable {
             await viewModel.refresh()
         }
+        .background(
+            NavigationChromeBridge(hideTabBar: true)
+        )
         .sheet(isPresented: $showingSafari) {
             if let detail = viewModel.detailState.value, let url = detail.webURL {
                 SafariSheet(url: url)
@@ -121,6 +124,7 @@ struct VideoDetailView: View {
                 }
                 .frame(width: containerWidth)
             }
+            .clipped()
             .ignoresSafeArea(edges: .top)
         }
     }
@@ -178,7 +182,7 @@ struct VideoDetailView: View {
             }
 
             Text(detail.title)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -365,5 +369,49 @@ struct VideoDetailView: View {
         }
         .padding(.horizontal, 18)
         .padding(.top, topInset + 10)
+    }
+}
+
+private struct NavigationChromeBridge: UIViewControllerRepresentable {
+    let hideTabBar: Bool
+
+    func makeUIViewController(context: Context) -> Controller {
+        Controller(hideTabBar: hideTabBar)
+    }
+
+    func updateUIViewController(_ uiViewController: Controller, context: Context) {
+        uiViewController.hideTabBar = hideTabBar
+        uiViewController.applyChrome()
+    }
+
+    final class Controller: UIViewController {
+        var hideTabBar: Bool
+
+        init(hideTabBar: Bool) {
+            self.hideTabBar = hideTabBar
+            super.init(nibName: nil, bundle: nil)
+            view.isHidden = true
+        }
+
+        @available(*, unavailable)
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            applyChrome()
+        }
+
+        override func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
+            tabBarController?.tabBar.isHidden = false
+        }
+
+        func applyChrome() {
+            tabBarController?.tabBar.isHidden = hideTabBar
+            navigationController?.interactivePopGestureRecognizer?.delegate = nil
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        }
     }
 }

@@ -35,6 +35,16 @@ private struct RootTabBarController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UITabBarController {
         let tabBarController = UITabBarController()
         tabBarController.delegate = context.coordinator
+        tabBarController.view.backgroundColor = .clear
+        tabBarController.tabBar.isTranslucent = true
+
+        let appearance = UITabBarAppearance()
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+        appearance.backgroundColor = .clear
+        tabBarController.tabBar.standardAppearance = appearance
+        tabBarController.tabBar.scrollEdgeAppearance = appearance
+
         tabBarController.viewControllers = makeViewControllers()
         tabBarController.selectedIndex = tabState.selected.rawValue
         context.coordinator.hasCompletedInitialSelection = true
@@ -54,6 +64,7 @@ private struct RootTabBarController: UIViewControllerRepresentable {
                     .environmentObject(tabState)
             }
         )
+        home.view.backgroundColor = .clear
         home.tabBarItem = UITabBarItem(
             title: "Home",
             image: UIImage(systemName: "house"),
@@ -66,6 +77,7 @@ private struct RootTabBarController: UIViewControllerRepresentable {
                     .environmentObject(tabState)
             }
         )
+        search.view.backgroundColor = .clear
         search.tabBarItem = UITabBarItem(
             title: "Search",
             image: UIImage(systemName: "magnifyingglass"),
@@ -78,6 +90,7 @@ private struct RootTabBarController: UIViewControllerRepresentable {
                     .environmentObject(tabState)
             }
         )
+        profile.view.backgroundColor = .clear
         profile.tabBarItem = UITabBarItem(
             title: "Profile",
             image: UIImage(systemName: "person.crop.circle"),
