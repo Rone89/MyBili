@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SearchView: View {
     @State private var viewModel = SearchViewModel()
+    @Namespace private var detailTransition
 
     private let columns = [
         GridItem(.adaptive(minimum: 110), spacing: 12),
@@ -152,9 +153,14 @@ struct SearchView: View {
                     LazyVStack(spacing: 18) {
                         ForEach(videos) { video in
                             NavigationLink {
-                                VideoDetailView(identifier: video.identifier)
+                                VideoDetailView(
+                                    identifier: video.identifier,
+                                    transitionID: video.id,
+                                    transitionNamespace: detailTransition
+                                )
                             } label: {
                                 VideoCard(video: video)
+                                    .matchedTransitionSource(id: video.id, in: detailTransition)
                                     .onAppear {
                                         Task {
                                             await viewModel.loadMoreIfNeeded(current: video)
