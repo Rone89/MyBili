@@ -1,38 +1,114 @@
 import SwiftUI
+import UIKit
 
-enum RootTabItem: Hashable {
-    case home
-    case search
-    case profile
+enum RootTabItem: Int, Hashable {
+    case home = 0
+    case search = 1
+    case profile = 2
+}
+
+final class RootTabState: ObservableObject {
+    @Published var selected: RootTabItem = .home
+    @Published var homeScrollRequest: Int = 0
+
+    func requestHomeScrollToTop() {
+        homeScrollRequest += 1
+    }
 }
 
 struct RootTabView: View {
-    @State private var selection: RootTabItem = .home
+    @StateObject private var tabState = RootTabState()
 
     var body: some View {
-        TabView(selection: $selection) {
-            NavigationStack {
-                HomeView(selection: $selection)
-            }
-            .tag(RootTabItem.home)
-            .tabItem {
-                Label("Home", systemImage: "house.fill")
-            }
+        RootTabBarController(tabState: tabState)
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+    }
+}
 
-            NavigationStack {
+private struct RootTabBarController: UIViewControllerRepresentable {
+    @ObservedObject var tabState: RootTabState
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(tabState: tabState)
+    }
+
+    func makeUIViewController(context: Context) -> UITabBarController {
+        let tabBarController = UITabBarController()
+        tabBarController.delegate = context.coordinator
+        tabBarController.viewControllers = makeViewControllers()
+        tabBarController.selectedIndex = tabState.selected.rawValue
+        context.coordinator.hasCompletedInitialSelection = true
+        return tabBarController
+    }
+
+    func updateUIViewController(_ uiViewController: UITabBarController, context: Context) {
+        if uiViewController.selectedIndex != tabState.selected.rawValue {
+            uiViewController.selectedIndex = tabState.selected.rawValue
+        }
+    }
+
+    private func makeViewControllers() -> [UIViewController] {
+        let home = UIHostingController(
+            rootView: NavigationStack {
+                HomeView()
+                    .environmentObject(tabState)
+            }
+        )
+        home.tabBarItem = UITabBarItem(
+            title: "Home",
+            image: UIImage(systemName: "house"),
+            selectedImage: UIImage(systemName: "house.fill")
+        )
+
+        let search = UIHostingController(
+            rootView: NavigationStack {
                 SearchView()
+                    .environmentObject(tabState)
             }
-            .tag(RootTabItem.search)
-            .tabItem {
-                Label("Search", systemImage: "magnifyingglass")
+        )
+        search.tabBarItem = UITabBarItem(
+            title: "Search",
+            image: UIImage(systemName: "magnifyingglass"),
+            selectedImage: UIImage(systemName: "magnifyingglass")
+        )
+
+        let profile = UIHostingController(
+            rootView: NavigationStack {
+                ProfileView()
+                    .environmentObject(tabState)
+            }
+        )
+        profile.tabBarItem = UITabBarItem(
+            title: "Profile",
+            image: UIImage(systemName: "person.crop.circle"),
+            selectedImage: UIImage(systemName: "person.crop.circle.fill")
+        )
+
+        return [home, search, profile]
+    }
+
+    final class Coordinator: NSObject, UITabBarControllerDelegate {
+        private let tabState: RootTabState
+        var hasCompletedInitialSelection = false
+
+        init(tabState: RootTabState) {
+            self.tabState = tabState
+        }
+
+        func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+            guard hasCompletedInitialSelection,
+                  let viewControllers = tabBarController.viewControllers,
+                  let index = viewControllers.firstIndex(of: viewController),
+                  let selected = RootTabItem(rawValue: index) else {
+                return
             }
 
-            NavigationStack {
-                ProfileView()
-            }
-            .tag(RootTabItem.profile)
-            .tabItem {
-                Label("Profile", systemImage: "person.crop.circle")
+            if tabState.selected == selected {
+                if selected == .home {
+                    tabState.requestHomeScrollToTop()
+                }
+            } else {
+                tabState.selected = selected
             }
         }
     }

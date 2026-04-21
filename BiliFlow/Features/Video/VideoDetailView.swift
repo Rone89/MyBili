@@ -47,7 +47,10 @@ struct VideoDetailView: View {
                 .frame(maxHeight: .infinity, alignment: .top)
                 .ignoresSafeArea(edges: .top)
 
-                content(topInset: proxy.safeAreaInsets.top)
+                content(
+                    topInset: proxy.safeAreaInsets.top,
+                    containerWidth: proxy.size.width
+                )
 
                 topBar(topInset: proxy.safeAreaInsets.top)
             }
@@ -68,7 +71,7 @@ struct VideoDetailView: View {
     }
 
     @ViewBuilder
-    private func content(topInset: CGFloat) -> some View {
+    private func content(topInset: CGFloat, containerWidth: CGFloat) -> some View {
         switch viewModel.detailState {
         case .idle, .loading:
             LoadingStateView(
@@ -92,9 +95,11 @@ struct VideoDetailView: View {
             .padding(.top, topInset + 64)
 
         case let .loaded(detail):
+            let cardWidth = max(containerWidth - 24, 0)
+
             ScrollView(showsIndicators: false) {
                 VStack(spacing: -34) {
-                    heroCover(detail: detail, topInset: topInset)
+                    heroCover(detail: detail, topInset: topInset, width: containerWidth)
 
                     VStack(alignment: .leading, spacing: 24) {
                         detailHeader(detail)
@@ -103,7 +108,6 @@ struct VideoDetailView: View {
                         openInSafariButton
                         relatedSection
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
                     .padding(.bottom, 44)
@@ -112,10 +116,10 @@ struct VideoDetailView: View {
                             .fill(Color(.systemBackground))
                             .shadow(color: .black.opacity(0.06), radius: 24, y: -8)
                     )
-                    .padding(.horizontal, 12)
+                    .frame(width: cardWidth, alignment: .leading)
                     .padding(.bottom, 24)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(width: containerWidth)
             }
             .ignoresSafeArea(edges: .top)
         }
@@ -180,15 +184,31 @@ struct VideoDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 14) {
-                Label(detail.ownerName, systemImage: "person.fill")
-                Label(detail.viewText, systemImage: "play.fill")
-                Label(detail.danmakuText, systemImage: "text.bubble.fill")
+            ViewThatFits(in: .vertical) {
+                HStack(spacing: 14) {
+                    Label(detail.ownerName, systemImage: "person.fill")
+                    Label(detail.viewText, systemImage: "play.fill")
+                    Label(detail.danmakuText, systemImage: "text.bubble.fill")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(detail.ownerName, systemImage: "person.fill")
+                        .lineLimit(1)
+
+                    HStack(spacing: 14) {
+                        Label(detail.viewText, systemImage: "play.fill")
+                        Label(detail.danmakuText, systemImage: "text.bubble.fill")
+                    }
+                    .lineLimit(1)
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .frame(maxWidth: .infinity, alignment: .leading)
 
             if let publishedText = BiliFormatters.publishedText(detail.publishedAt) {
                 Text("Published on \(publishedText)")
@@ -266,7 +286,7 @@ struct VideoDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func heroCover(detail: VideoDetail, topInset: CGFloat) -> some View {
+    private func heroCover(detail: VideoDetail, topInset: CGFloat, width: CGFloat) -> some View {
         ZStack(alignment: .bottomLeading) {
             AsyncImage(url: detail.coverURL, transaction: Transaction(animation: .easeInOut(duration: 0.25))) { phase in
                 switch phase {
@@ -316,11 +336,13 @@ struct VideoDetailView: View {
                 }
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(.white.opacity(0.9))
+                .lineLimit(1)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 24)
             .padding(.bottom, 58)
         }
+        .frame(width: width)
         .frame(height: topInset + 300)
         .clipShape(
             RoundedRectangle(cornerRadius: 0, style: .continuous)

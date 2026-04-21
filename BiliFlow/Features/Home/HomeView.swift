@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Binding var selection: RootTabItem
+    @EnvironmentObject private var tabState: RootTabState
     @State private var viewModel = HomeViewModel()
     @Namespace private var detailTransition
+
+    private let topAnchorID = "home-top-anchor"
 
     var body: some View {
         ZStack {
@@ -60,42 +62,60 @@ struct HomeView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                let remainingVideos = feedVideos(from: videos)
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 24) {
+                            Color.clear
+                                .frame(height: 1)
+                                .id(topAnchorID)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 24) {
-                        homeHeader
+                            homeHeader
 
-                        if viewModel.isRefreshing {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Refreshing recommendations...")
-                                    .font(.footnote.weight(.medium))
-                                    .foregroundStyle(.secondary)
+                            if viewModel.isRefreshing {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Refreshing recommendations...")
+                                        .font(.footnote.weight(.medium))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .background(
+                                    Capsule()
+                                        .fill(.ultraThinMaterial)
+                                )
+                                .transition(.opacity.combined(with: .scale(scale: 0.96)))
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(
-                                Capsule()
-                                    .fill(.ultraThinMaterial)
-                            )
-                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                        }
 
-                        featuredGrid(videos: Array(videos.prefix(4)))
-                        if !remainingVideos.isEmpty {
-                            recommendSection(videos: remainingVideos)
+                            recommendSection(videos: videos)
+
+                            if viewModel.isLoadingMore {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Loading more recommendations...")
+                                        .font(.footnote.weight(.medium))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 4)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                        .padding(.bottom, 28)
+                    }
+                    .refreshable {
+                        await viewModel.refresh()
+                    }
+                    .animation(.easeInOut(duration: 0.22), value: viewModel.isRefreshing)
+                    .onChange(of: tabState.homeScrollRequest) { _, _ in
+                        withAnimation(.easeInOut(duration: 0.28)) {
+                            proxy.scrollTo(topAnchorID, anchor: .top)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 28)
                 }
-                .refreshable {
-                    await viewModel.refresh()
-                }
-                .animation(.easeInOut(duration: 0.22), value: viewModel.isRefreshing)
             }
         }
     }
@@ -115,7 +135,7 @@ struct HomeView: View {
                 Spacer()
 
                 Button {
-                    selection = .profile
+                    tabState.selected = .profile
                 } label: {
                     ZStack(alignment: .topTrailing) {
                         Circle()
@@ -142,7 +162,7 @@ struct HomeView: View {
             }
 
             Button {
-                selection = .search
+                tabState.selected = .search
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "magnifyingglass")
@@ -170,116 +190,6 @@ struct HomeView: View {
         }
     }
 
-    private func featuredGrid(videos: [VideoSummary]) -> some View {
-        let columns = [
-            GridItem(.flexible(), spacing: 14),
-            GridItem(.flexible(), spacing: 14),
-        ]
-
-        return LazyVGrid(columns: columns, spacing: 14) {
-            ForEach(videos) { video in
-                NavigationLink {
-                    VideoDetailView(
-                        identifier: video.identifier,
-                        transitionID: video.id,
-                        transitionNamespace: detailTransition
-                    )
-                } label: {
-                    featuredTile(for: video)
-                        .matchedTransitionSource(id: video.id, in: detailTransition)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private func featuredTile(for video: VideoSummary) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            AsyncImage(url: video.coverURL, transaction: Transaction(animation: .easeInOut(duration: 0.2))) { phase in
-                switch phase {
-                case let .success(image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                case .empty:
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.99, green: 0.76, blue: 0.48),
-                                    Color(red: 0.47, green: 0.72, blue: 0.98),
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .overlay {
-                            ProgressView()
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                case .failure:
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.72, green: 0.78, blue: 0.98),
-                                    Color(red: 0.95, green: 0.70, blue: 0.72),
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                @unknown default:
-                    Color(.secondarySystemFill)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-
-            LinearGradient(
-                colors: [
-                    .clear,
-                    .black.opacity(0.16),
-                    .black.opacity(0.45),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            VStack(alignment: .leading, spacing: 6) {
-                if let areaName = video.areaName, !areaName.isEmpty {
-                    Text(areaName)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.92))
-                        .lineLimit(1)
-                }
-
-                Text(video.title)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
-
-                HStack(spacing: 10) {
-                    Label(video.viewText, systemImage: "play.fill")
-                    Text(video.durationText)
-                }
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.white.opacity(0.9))
-            }
-            .padding(14)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 164)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color.white.opacity(0.38), lineWidth: 1)
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-
     private func recommendSection(videos: [VideoSummary]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Recommended videos")
@@ -295,16 +205,14 @@ struct HomeView: View {
                 } label: {
                     VideoCard(video: video)
                         .matchedTransitionSource(id: video.id, in: detailTransition)
+                        .onAppear {
+                            Task {
+                                await viewModel.loadMoreIfNeeded(current: video)
+                            }
+                        }
                 }
                 .buttonStyle(.plain)
             }
         }
-    }
-
-    private func feedVideos(from videos: [VideoSummary]) -> [VideoSummary] {
-        if videos.count > 4 {
-            return Array(videos.dropFirst(4))
-        }
-        return []
     }
 }
