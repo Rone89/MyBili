@@ -1,0 +1,42 @@
+name: BiliFlow
+options:
+  minimumXcodeGenVersion: 2.39.0
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+configs:
+  Debug: debug
+  Release: release
+
+targets:
+  BiliFlow:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: BiliFlow
+    info:
+      path: BiliFlow/App/Info.plist
+      properties:
+        CFBundleDisplayName: BiliFlow
+        LSApplicationCategoryType: public.app-category.entertainment
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        UIStatusBarStyle: UIStatusBarStyleDefault
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.codex.biliflow
+        PRODUCT_NAME: BiliFlow
+        SWIFT_VERSION: 6.0
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        TARGETED_DEVICE_FAMILY: "1,2"
+    scheme:
+      testTargets: []

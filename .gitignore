@@ -1,0 +1,9 @@
+.DS_Store
+DerivedData/
+build/
+*.ipa
+*.xcworkspace
+xcuserdata/
+*.swp
+*.orig
+reference/
