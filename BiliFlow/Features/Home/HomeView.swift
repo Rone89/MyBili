@@ -65,6 +65,24 @@ struct HomeView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
                         homeHeader
+
+                        if viewModel.isRefreshing {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Refreshing recommendations...")
+                                    .font(.footnote.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(
+                                Capsule()
+                                    .fill(.ultraThinMaterial)
+                            )
+                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        }
+
                         featuredGrid(videos: Array(videos.prefix(4)))
                         if !remainingVideos.isEmpty {
                             recommendSection(videos: remainingVideos)
@@ -77,6 +95,7 @@ struct HomeView: View {
                 .refreshable {
                     await viewModel.refresh()
                 }
+                .animation(.easeInOut(duration: 0.22), value: viewModel.isRefreshing)
             }
         }
     }
@@ -182,6 +201,7 @@ struct HomeView: View {
                     image
                         .resizable()
                         .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .empty:
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(
@@ -197,6 +217,7 @@ struct HomeView: View {
                         .overlay {
                             ProgressView()
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .failure:
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(
@@ -209,8 +230,10 @@ struct HomeView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 @unknown default:
                     Color(.secondarySystemFill)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
 
@@ -247,12 +270,14 @@ struct HomeView: View {
             }
             .padding(14)
         }
+        .frame(maxWidth: .infinity)
         .frame(height: 164)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(Color.white.opacity(0.38), lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private func recommendSection(videos: [VideoSummary]) -> some View {

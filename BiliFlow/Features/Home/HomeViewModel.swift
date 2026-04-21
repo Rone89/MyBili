@@ -1,10 +1,12 @@
 import Foundation
 import Observation
+import SwiftUI
 
 @MainActor
 @Observable
 final class HomeViewModel {
     var recommendState: Loadable<[VideoSummary]> = .idle
+    var isRefreshing = false
 
     private let service: BiliService
 
@@ -21,22 +23,35 @@ final class HomeViewModel {
         case .loading, .loaded:
             return
         case .idle, .failed:
-            await reloadRecommend()
+            await reloadRecommend(showLoading: true)
         }
     }
 
     func refresh() async {
-        await reloadRecommend()
+        await reloadRecommend(showLoading: false)
     }
 
-    private func reloadRecommend() async {
-        recommendState = .loading
+    private func reloadRecommend(showLoading: Bool) async {
+        if showLoading || recommendState.value == nil {
+            recommendState = .loading
+        } else {
+            isRefreshing = true
+        }
+
+        defer {
+            isRefreshing = false
+        }
 
         do {
             let items = try await service.fetchRecommendedVideos(refreshIndex: 0)
-            recommendState = .loaded(uniqueVideos(items))
+            let unique = uniqueVideos(items)
+            withAnimation(.easeInOut(duration: 0.25)) {
+                recommendState = .loaded(unique)
+            }
         } catch {
-            recommendState = .failed(error.localizedDescription)
+            if recommendState.value == nil {
+                recommendState = .failed(error.localizedDescription)
+            }
         }
     }
 

@@ -103,6 +103,7 @@ struct VideoDetailView: View {
                         openInSafariButton
                         relatedSection
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
                     .padding(.bottom, 44)
@@ -114,6 +115,7 @@ struct VideoDetailView: View {
                     .padding(.horizontal, 12)
                     .padding(.bottom, 24)
                 }
+                .frame(maxWidth: .infinity)
             }
             .ignoresSafeArea(edges: .top)
         }
@@ -195,6 +197,7 @@ struct VideoDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func descriptionSection(_ detail: VideoDetail) -> some View {
@@ -224,6 +227,7 @@ struct VideoDetailView: View {
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
         .tint(Color(red: 0.18, green: 0.53, blue: 0.86))
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
