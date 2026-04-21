@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct VideoDetailView: View {
     @State private var viewModel: VideoDetailViewModel
@@ -48,24 +47,19 @@ struct VideoDetailView: View {
                 .frame(maxHeight: .infinity, alignment: .top)
                 .ignoresSafeArea(edges: .top)
 
-                content(
-                    topInset: proxy.safeAreaInsets.top,
-                    containerWidth: proxy.size.width
-                )
+                content(topInset: proxy.safeAreaInsets.top)
 
                 topBar(topInset: proxy.safeAreaInsets.top)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .task {
             await viewModel.loadIfNeeded()
         }
         .refreshable {
             await viewModel.refresh()
         }
-        .background(
-            NavigationChromeBridge(hideTabBar: true)
-        )
         .sheet(isPresented: $showingSafari) {
             if let detail = viewModel.detailState.value, let url = detail.webURL {
                 SafariSheet(url: url)
@@ -74,7 +68,7 @@ struct VideoDetailView: View {
     }
 
     @ViewBuilder
-    private func content(topInset: CGFloat, containerWidth: CGFloat) -> some View {
+    private func content(topInset: CGFloat) -> some View {
         switch viewModel.detailState {
         case .idle, .loading:
             LoadingStateView(
@@ -98,11 +92,9 @@ struct VideoDetailView: View {
             .padding(.top, topInset + 64)
 
         case let .loaded(detail):
-            let cardWidth = max(containerWidth - 24, 0)
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: -34) {
-                    heroCover(detail: detail, topInset: topInset, width: containerWidth)
+                    heroCover(detail: detail, topInset: topInset)
 
                     VStack(alignment: .leading, spacing: 24) {
                         detailHeader(detail)
@@ -119,12 +111,10 @@ struct VideoDetailView: View {
                             .fill(Color(.systemBackground))
                             .shadow(color: .black.opacity(0.06), radius: 24, y: -8)
                     )
-                    .frame(width: cardWidth, alignment: .leading)
+                    .padding(.horizontal, 12)
                     .padding(.bottom, 24)
                 }
-                .frame(width: containerWidth)
             }
-            .clipped()
             .ignoresSafeArea(edges: .top)
         }
     }
@@ -136,6 +126,7 @@ struct VideoDetailView: View {
 
             LazyVGrid(
                 columns: [
+                    GridItem(.flexible()),
                     GridItem(.flexible()),
                     GridItem(.flexible()),
                 ],
@@ -182,37 +173,17 @@ struct VideoDetailView: View {
             }
 
             Text(detail.title)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-            ViewThatFits(in: .vertical) {
-                HStack(spacing: 14) {
-                    Label(detail.ownerName, systemImage: "person.fill")
-                    Label(detail.viewText, systemImage: "play.fill")
-                    Label(detail.danmakuText, systemImage: "text.bubble.fill")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(detail.ownerName, systemImage: "person.fill")
-                        .lineLimit(1)
-
-                    HStack(spacing: 14) {
-                        Label(detail.viewText, systemImage: "play.fill")
-                        Label(detail.danmakuText, systemImage: "text.bubble.fill")
-                    }
-                    .lineLimit(1)
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 14) {
+                Label(detail.ownerName, systemImage: "person.fill")
+                Label(detail.viewText, systemImage: "play.fill")
+                Label(detail.danmakuText, systemImage: "text.bubble.fill")
             }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
 
             if let publishedText = BiliFormatters.publishedText(detail.publishedAt) {
                 Text("Published on \(publishedText)")
@@ -220,8 +191,6 @@ struct VideoDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func descriptionSection(_ detail: VideoDetail) -> some View {
@@ -233,25 +202,19 @@ struct VideoDetailView: View {
                 .font(.body)
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var openInSafariButton: some View {
         Button {
             showingSafari = true
         } label: {
-            Label("Open in Safari", systemImage: "safari.fill")
+            Label("Open the playback page in Safari", systemImage: "safari.fill")
                 .frame(maxWidth: .infinity)
-                .lineLimit(1)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
         .tint(Color(red: 0.18, green: 0.53, blue: 0.86))
-        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -287,10 +250,9 @@ struct VideoDetailView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func heroCover(detail: VideoDetail, topInset: CGFloat, width: CGFloat) -> some View {
+    private func heroCover(detail: VideoDetail, topInset: CGFloat) -> some View {
         ZStack(alignment: .bottomLeading) {
             AsyncImage(url: detail.coverURL, transaction: Transaction(animation: .easeInOut(duration: 0.25))) { phase in
                 switch phase {
@@ -340,13 +302,11 @@ struct VideoDetailView: View {
                 }
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(.white.opacity(0.9))
-                .lineLimit(1)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 24)
             .padding(.bottom, 58)
         }
-        .frame(width: width)
         .frame(height: topInset + 300)
         .clipShape(
             RoundedRectangle(cornerRadius: 0, style: .continuous)
@@ -369,49 +329,5 @@ struct VideoDetailView: View {
         }
         .padding(.horizontal, 18)
         .padding(.top, topInset + 10)
-    }
-}
-
-private struct NavigationChromeBridge: UIViewControllerRepresentable {
-    let hideTabBar: Bool
-
-    func makeUIViewController(context: Context) -> Controller {
-        Controller(hideTabBar: hideTabBar)
-    }
-
-    func updateUIViewController(_ uiViewController: Controller, context: Context) {
-        uiViewController.hideTabBar = hideTabBar
-        uiViewController.applyChrome()
-    }
-
-    final class Controller: UIViewController {
-        var hideTabBar: Bool
-
-        init(hideTabBar: Bool) {
-            self.hideTabBar = hideTabBar
-            super.init(nibName: nil, bundle: nil)
-            view.isHidden = true
-        }
-
-        @available(*, unavailable)
-        required init?(coder: NSCoder) {
-            fatalError("init(coder:) has not been implemented")
-        }
-
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            applyChrome()
-        }
-
-        override func viewDidDisappear(_ animated: Bool) {
-            super.viewDidDisappear(animated)
-            tabBarController?.tabBar.isHidden = false
-        }
-
-        func applyChrome() {
-            tabBarController?.tabBar.isHidden = hideTabBar
-            navigationController?.interactivePopGestureRecognizer?.delegate = nil
-            navigationController?.interactivePopGestureRecognizer?.isEnabled = true
-        }
     }
 }
